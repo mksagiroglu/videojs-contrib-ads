@@ -500,6 +500,18 @@ that certain expectations are met. The next section describes those expectations
 * [Migrating to 4.0](migration-guides/migrating-to-4.0.md)
 * [Migrating to 5.0](migration-guides/migrating-to-5.0.md)
 
+## Testing
+
+### Using command line
+
+```sh
+npm run test
+```
+
+### In browser
+
+Run `./node_modules/.bin/karma start --no-single-run --browsers Chrome test/karma.conf.js` then open `localhost:9876/debug.html`
+
 ## Building
 
 The ads plugin is designed to be built with `npm`.
@@ -520,6 +532,13 @@ Inside you'll find the minified ads plugin file `videojs.ads.min.js`, the unmini
 ## Release History
 
 A short list of features, fixes and changes for each release is available in [CHANGELOG.md](https://github.com/videojs/videojs-contrib-ads/blob/master/CHANGELOG.md).
+
+## Roadmap
+
+### Unplanned Major Version Update
+
+* Pause content video if there is a programmatic call to play (prefixed as adplay) while an ad is playing in an ad container (rather than content video element). Prefixing doesn't prevent the videojs behavior, so this would prevent the content from playing behind the ad. Right now, ad integrations I am aware of are doing this on their own, so this would require a migration to move the behavior into this project.
+* `contentended` has a confusing name: real `ended` events are later sent, and that is when content should be considered ended. The `content` prefix is used for events when content is resuming after an ad. A better name would be `readyforpostroll`. That would make it clearer to implementations that the correct response would be to either play a postroll or send the `nopostroll` event.
 
 ## License
 

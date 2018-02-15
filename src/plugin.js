@@ -16,7 +16,7 @@ import cueTextTracks from './cueTextTracks.js';
 
 const VIDEO_EVENTS = videojs.getTech('Html5').Events;
 
-/**
+/*
  * Remove the poster attribute from the video element tech, if present. When
  * reusing a video element for multiple videos, the poster image will briefly
  * reappear while the new source loads. Removing the attribute ahead of time
@@ -197,6 +197,7 @@ const contribAdsPlugin = function(options) {
       player.ads.adType = null;
       player.ads._hasThereBeenALoadedData = false;
       player.ads._hasThereBeenALoadedMetaData = false;
+      player.ads._cancelledPlay = false;
     },
 
     // Call this when an ad response has been received and there are
@@ -301,7 +302,7 @@ const contribAdsPlugin = function(options) {
     // * A non-linear ad is active
     isInAdMode() {
 
-             // Saw "play" but not "adsready"
+      // Saw "play" but not "adsready"
       return player.ads.state === 'ads-ready?' ||
 
              // Waiting to learn about preroll
@@ -571,7 +572,7 @@ const contribAdsPlugin = function(options) {
     'postroll?': {
       enter() {
         player.ads._contentEnding = true;
-        this.snapshot = snapshot.getPlayerSnapshot(player);
+
         if (player.ads.nopostroll_) {
           window.setTimeout(function() {
             // content-resuming happens after the timeout for backward-compatibility
@@ -662,16 +663,6 @@ const contribAdsPlugin = function(options) {
           }
         },
         contentupdate() {
-          // We know sources have changed, so we call CancelContentPlay
-          // to avoid playback of video in the background of an ad. Playback Occurs on
-          // Android devices if we do not call cancelContentPlay. This is because
-          // the sources do not get updated in time on Android due to timing issues.
-          // So instead of checking if the sources have changed in the play handler
-          // and calling cancelContentPlay() there we call it here.
-          // This does not happen on Desktop as the sources do get updated in time.
-          if (!player.ads.shouldPlayContentBehindAd(player)) {
-            cancelContentPlay(player);
-          }
           if (player.paused()) {
             this.state = 'content-set';
           } else {
@@ -740,6 +731,47 @@ const contribAdsPlugin = function(options) {
 
   };
 
+  // A utility method for textTrackChangeHandler to define the conditions
+  // when text tracks should be disabled.
+  // Currently this includes:
+  //  - on iOS with native text tracks, during an ad playing
+  const shouldDisableTracks = function() {
+    // If the platform matches iOS with native text tracks
+    // and this occurs during ad playback, we should disable tracks again.
+    // If shouldPlayContentBehindAd, no special handling is needed.
+    return !player.ads.shouldPlayContentBehindAd(player) &&
+            player.ads.isAdPlaying() &&
+            player.tech_.featuresNativeTextTracks &&
+            videojs.browser.IS_IOS &&
+            // older versions of video.js did not use an emulated textTrackList
+            !Array.isArray(player.textTracks());
+  };
+
+  /*
+   * iOS Safari will change caption mode to 'showing' if a user previously
+   * turned captions on manually for that video source, so this TextTrackList
+   * 'change' event handler will re-disable them in case that occurs during ad playback
+   */
+  const textTrackChangeHandler = function() {
+    const textTrackList = player.textTracks();
+
+    if (shouldDisableTracks()) {
+      // We must double check all tracks
+      for (let i = 0; i < textTrackList.length; i++) {
+        const track = textTrackList[i];
+
+        if (track.mode === 'showing') {
+          track.mode = 'disabled';
+        }
+      }
+    }
+  };
+
+  // Add the listener to the text track list
+  player.ready(function() {
+    player.textTracks().addEventListener('change', textTrackChangeHandler);
+  });
+
   // Register our handler for the events that the state machine will process
   player.on(VIDEO_EVENTS.concat([
     // Events emitted by this plugin
@@ -763,7 +795,7 @@ const contribAdsPlugin = function(options) {
 
   ]), processEvent);
 
-  // Clear timeouts when player is disposed
+  // Clear timeouts and handlers when player is disposed
   player.on('dispose', function() {
     if (player.ads.adTimeoutTimeout) {
       window.clearTimeout(player.ads.adTimeoutTimeout);
@@ -780,6 +812,8 @@ const contribAdsPlugin = function(options) {
     if (player.ads.tryToResumeTimeout_) {
       player.clearTimeout(player.ads.tryToResumeTimeout_);
     }
+
+    player.textTracks().removeEventListener('change', textTrackChangeHandler);
   });
 
   // If we're autoplaying, the state machine will immidiately process

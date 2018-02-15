@@ -7,20 +7,7 @@ import window from 'global/window';
 
 import videojs from 'video.js';
 
-function initialize(player) {
-  player.on('contentupdate', function() {
-    if (player.ads.snapshot.trackChangeHandler) {
-      const textTrackList = player.textTracks();
-
-      textTrackList.removeEventListener('change', player.ads.snapshot.trackChangeHandler);
-      player.ads.snapshotIOSTrackHandlerAdded_ = false;
-    }
-  });
-
-  player.ads.snapshotInitialized_ = true;
-}
-
-/**
+/*
  * Returns an object that captures the portions of player state relevant to
  * video playback. The result of this function can be passed to
  * restorePlayerSnapshot with a player to return the player to the state it
@@ -28,11 +15,6 @@ function initialize(player) {
  * @param {Object} player The videojs player object
  */
 export function getPlayerSnapshot(player) {
-
-  if (player.ads.snapshotInitialized_ === undefined) {
-    initialize(player);
-  }
-
   let currentTime;
 
   if (videojs.browser.IS_IOS && player.ads.isLive(player)) {
@@ -47,9 +29,7 @@ export function getPlayerSnapshot(player) {
   }
 
   const tech = player.$('.vjs-tech');
-  const remoteTracks = player.remoteTextTracks ? player.remoteTextTracks() : [];
   const tracks = player.textTracks ? player.textTracks() : [];
-  const suppressedRemoteTracks = [];
   const suppressedTracks = [];
   const snapshotObject = {
     ended: player.ended(),
@@ -64,17 +44,6 @@ export function getPlayerSnapshot(player) {
     snapshotObject.style = tech.getAttribute('style');
   }
 
-  for (let i = 0; i < remoteTracks.length; i++) {
-    const track = remoteTracks[i];
-
-    suppressedRemoteTracks.push({
-      track,
-      mode: track.mode
-    });
-    track.mode = 'disabled';
-  }
-  snapshotObject.suppressedRemoteTracks = suppressedRemoteTracks;
-
   for (let i = 0; i < tracks.length; i++) {
     const track = tracks[i];
 
@@ -86,38 +55,10 @@ export function getPlayerSnapshot(player) {
   }
   snapshotObject.suppressedTracks = suppressedTracks;
 
-  /**
-   * iOS Safari will change caption mode to 'showing' if a user previously
-   * turned captions on manually for that video source, so this TextTrackList
-   * 'change' event handler will re-disable them in case that occurs during ad playback
-   */
-  const iOSTrackListChangeHandler = function() {
-    if (player.ads.isAdPlaying()) {
-      const textTrackList = player.textTracks();
-
-      for (let i = 0; i < textTrackList.length; i++) {
-        const track = textTrackList[i];
-
-        if (track.mode === 'showing') {
-          track.mode = 'disabled';
-        }
-      }
-    }
-  };
-
-  if (videojs.browser.IS_IOS && player.tech_.featuresNativeTextTracks && !Array.isArray(tracks)) {
-    if (!player.ads.snapshotIOSTrackHandlerAdded_) {
-      tracks.addEventListener('change', iOSTrackListChangeHandler);
-      player.ads.snapshotIOSTrackHandlerAdded_ = true;
-    }
-  }
-
-  snapshotObject.trackChangeHandler = iOSTrackListChangeHandler;
-
   return snapshotObject;
 }
 
-/**
+/*
  * Attempts to modify the specified player so that its state is equivalent to
  * the state of the snapshot.
  * @param {Object} player - the videojs player object
@@ -135,25 +76,10 @@ export function restorePlayerSnapshot(player, snapshotObject) {
   // the number of[ remaining attempts to restore the snapshot
   let attempts = 20;
 
-  const suppressedRemoteTracks = snapshotObject.suppressedRemoteTracks;
   const suppressedTracks = snapshotObject.suppressedTracks;
-
-  // ensures that the iOS TextTrackList 'change' listener added in getPlayerSnapshot()
-  // doesn't persist into main content
-  if (videojs.browser.IS_IOS && player.tech_.featuresNativeTextTracks) {
-    const tracks = player.textTracks();
-
-    tracks.removeEventListener('change', snapshotObject.trackChangeHandler);
-    player.ads.snapshotIOSTrackHandlerAdded_ = false;
-  }
 
   let trackSnapshot;
   const restoreTracks = function() {
-    for (let i = 0; i < suppressedRemoteTracks.length; i++) {
-      trackSnapshot = suppressedRemoteTracks[i];
-      trackSnapshot.track.mode = trackSnapshot.mode;
-    }
-
     for (let i = 0; i < suppressedTracks.length; i++) {
       trackSnapshot = suppressedTracks[i];
       trackSnapshot.track.mode = trackSnapshot.mode;
@@ -183,6 +109,13 @@ export function restorePlayerSnapshot(player, snapshotObject) {
     // Resume playback if this wasn't a postroll
     if (!snapshotObject.ended) {
       player.play();
+    }
+
+    // if we added autoplay to force content loading on iOS, remove it now
+    // that it has served its purpose
+    if (player.ads.shouldRemoveAutoplay_) {
+      player.autoplay(false);
+      player.ads.shouldRemoveAutoplay_ = false;
     }
   };
 
@@ -252,6 +185,16 @@ export function restorePlayerSnapshot(player, snapshotObject) {
     // on ios7, fiddling with textTracks too early will cause safari to crash
     player.one('contentloadedmetadata', restoreTracks);
 
+    // adding autoplay guarantees that Safari will load the content so we can
+    // seek back to the correct time after ads
+    if (videojs.browser.IS_IOS && !player.autoplay()) {
+      player.autoplay(true);
+
+      // if we get here, the player was not originally configured to autoplay,
+      // so we should remove it after it has served its purpose
+      player.ads.shouldRemoveAutoplay_ = true;
+    }
+
     // if the src changed for ad playback, reset it
     player.src({ src: snapshotObject.currentSrc, type: snapshotObject.type });
 
@@ -260,11 +203,16 @@ export function restorePlayerSnapshot(player, snapshotObject) {
     // Reace the `canplay` event with a timeout.
     player.one('contentcanplay', tryToResume);
     player.ads.tryToResumeTimeout_ = player.setTimeout(tryToResume, 2000);
-  } else if (!player.ended() || !snapshotObject.ended) {
+  } else {
     // if we didn't change the src, just restore the tracks
     restoreTracks();
-    // the src didn't change and this wasn't a postroll
-    // just resume playback at the current time.
-    player.play();
+
+    // we don't need to check snapshotObject.ended here because the content video
+    // element wasn't recycled
+    if (!player.ended()) {
+      // the src didn't change and this wasn't a postroll
+      // just resume playback at the current time.
+      player.play();
+    }
   }
 }
