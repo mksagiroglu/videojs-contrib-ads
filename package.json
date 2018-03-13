@@ -7,7 +7,7 @@
     "type": "git",
     "url": "https://github.com/videojs/videojs-contrib-ads.git"
   },
-  "version": "5.1.6",
+  "version": "6.0.0",
   "author": "Brightcove, Inc.",
   "engines": {
     "node": ">=4.8.0"
@@ -77,11 +77,11 @@
     "node-sass": "^4.5.3",
     "node-static": "^0.7.9",
     "npm-run-all": "^4.0.2",
-    "qunitjs": "^1.23.1",
+    "qunitjs": "^2.1.1",
     "rimraf": "^2.6.1",
-    "rollup": "^0.50",
+    "rollup": "0.50.1",
     "rollup-plugin-babel": "^2.7.1",
-    "rollup-plugin-commonjs": "^8.0.2",
+    "rollup-plugin-commonjs": "8.3.0",
     "rollup-plugin-json": "^2.1.1",
     "rollup-plugin-multi-entry": "^2.0.1",
     "rollup-plugin-node-resolve": "^3.0.0",
@@ -98,7 +98,8 @@
   "eslintConfig": {
     "extends": "videojs",
     "rules": {
-      "require-jsdoc": "off"
+      "require-jsdoc": "off",
+      "consistent-this": "off"
     }
   },
   "files": [
@@ -116,5 +117,12 @@
   },
   "generator-videojs-plugin": {
     "version": "5.0.0"
+  },
+  "greenkeeper": {
+    "ignore": [
+      "sinon",
+      "rollup",
+      "rollup-plugin-commonjs"
+    ]
   }
 }

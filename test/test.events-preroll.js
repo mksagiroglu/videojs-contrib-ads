@@ -10,7 +10,7 @@ TODO:
 
 import QUnit from 'qunit';
 import videojs from 'video.js';
-import '../example/example-integration.js';
+import '../examples/basic-ad-plugin/example-integration.js';
 
 QUnit.module('Events and Prerolls', {
   beforeEach: function() {
@@ -35,7 +35,6 @@ QUnit.module('Events and Prerolls', {
 
   afterEach: function() {
     this.player.dispose();
-    this.fixture.parentNode.removeChild(this.fixture);
   }
 });
 
