@@ -32,11 +32,11 @@ module.exports = function(config) {
       'node_modules/video.js/dist/video.js',
       'dist/videojs-contrib-ads.js',
       'dist/videojs-contrib-ads.css',
-      'test/shared-module-hooks.js',
+      'test/integration/lib/shared-module-hooks.js',
       'test/dist/bundle.js',
 
       // Test Data
-      {pattern: 'test/inventory.json', included: false, served: true},
+      {pattern: 'test/integration/lib/inventory.json', included: false, served: true},
       {pattern: 'examples/basic-ad-plugin/superclip-low.webm', included: false, served: true}
     ],
     customLaunchers: {
@@ -55,7 +55,7 @@ module.exports = function(config) {
     browserNoActivityTimeout: 300000,
     client: {
       qunit: {
-        testTimeout: 10000
+        testTimeout: 15000
       }
     }
   });

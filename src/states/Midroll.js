@@ -4,12 +4,28 @@ import adBreak from '../adBreak.js';
 export default class Midroll extends AdState {
 
   /*
+   * Allows state name to be logged even after minification.
+   */
+  static _getName() {
+    return 'Midroll';
+  }
+
+  /*
    * Midroll breaks happen when the integration calls startLinearAdMode,
    * which can happen at any time during content playback.
    */
   init(player) {
     player.ads.adType = 'midroll';
     adBreak.start(player);
+    player.addClass('vjs-ad-loading');
+  }
+
+  /*
+   * An ad has actually started playing.
+   * Remove the loading spinner.
+   */
+  onAdStarted(player) {
+    player.removeClass('vjs-ad-loading');
   }
 
   /*
@@ -20,6 +36,8 @@ export default class Midroll extends AdState {
 
     if (this.inAdBreak()) {
       this.contentResuming = true;
+      player.addClass('vjs-ad-content-resuming');
+      player.removeClass('vjs-ad-loading');
       adBreak.end(player);
     }
   }
@@ -34,6 +52,14 @@ export default class Midroll extends AdState {
     if (this.inAdBreak()) {
       player.ads.endLinearAdMode();
     }
+  }
+
+  /*
+   * Cleanup CSS classes.
+   */
+  cleanup(player) {
+    player.removeClass('vjs-ad-loading');
+    player.removeClass('vjs-ad-content-resuming');
   }
 
 }

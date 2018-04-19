@@ -10,6 +10,17 @@ import adBreak from '../adBreak.js';
  */
 export default class Preroll extends AdState {
 
+  /*
+   * Allows state name to be logged even after minification.
+   */
+  static _getName() {
+    return 'Preroll';
+  }
+
+  /*
+   * For state transitions to work correctly, initialization should
+   * happen here, not in a constructor.
+   */
   init(player, adsReady) {
     // Loading spinner from now until ad start or end of ad break.
     player.addClass('vjs-ad-loading');
@@ -35,6 +46,9 @@ export default class Preroll extends AdState {
     }
   }
 
+  /*
+   * Adsready event after play event.
+   */
   onAdsReady(player) {
     if (!player.ads.inAdBreak() && !player.ads.isContentResuming()) {
       player.ads.debug('Received adsready event (Preroll)');
@@ -168,6 +182,7 @@ export default class Preroll extends AdState {
 
     if (this.inAdBreak()) {
       player.removeClass('vjs-ad-loading');
+      player.addClass('vjs-ad-content-resuming');
       adBreak.end(player);
       this.contentResuming = true;
     }
@@ -214,14 +229,13 @@ export default class Preroll extends AdState {
   /*
    * Cleanup timeouts and spinner.
    */
-  cleanup() {
-    const player = this.player;
-
+  cleanup(player) {
     if (!player.ads._hasThereBeenALoadStartDuringPlayerLife) {
       videojs.log.warn('Leaving Preroll state before loadstart event can cause issues.');
     }
 
     player.removeClass('vjs-ad-loading');
+    player.removeClass('vjs-ad-content-resuming');
     player.clearTimeout(this._timeout);
   }
 

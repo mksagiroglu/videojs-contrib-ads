@@ -1,7 +1,7 @@
 import QUnit from 'qunit';
-import {Preroll} from '../../src/states.js';
-import * as CancelContentPlay from '../../src/cancelContentPlay.js';
-import adBreak from '../../src/adBreak.js';
+import {Preroll} from '../../../src/states.js';
+import * as CancelContentPlay from '../../../src/cancelContentPlay.js';
+import adBreak from '../../../src/adBreak.js';
 
 /*
  * These tests are intended to be isolated unit tests for one state with all
@@ -140,6 +140,6 @@ QUnit.test('remove ad loading class on cleanup', function(assert) {
 
   const removeClassSpy = sinon.spy(this.player, 'removeClass');
 
-  this.preroll.cleanup();
+  this.preroll.cleanup(this.player);
   assert.ok(removeClassSpy.calledWith('vjs-ad-loading'), 'loading class removed');
 });

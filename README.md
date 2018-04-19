@@ -25,6 +25,14 @@ Maintenance Status: Stable
 
 ## Getting Started
 
+### Available on NPM
+
+```sh
+npm install videojs-contrib-ads
+```
+
+### Building It Yourself
+
 In addition to the video.js library, you'll need two files from this project: `videojs.ads.js` and `videojs.ads.css`.
 After you build the project they are both in the `dist` directory.
 
@@ -56,11 +64,9 @@ You may also use the Javascript and CSS links from the following to get started:
 
 ### Using a module system
 
-If you are loading `videojs-contrib-ads` using modules, do this:
+If you are loading `videojs-contrib-ads` using modules, this example is a useful starting point:
 
-https://github.com/videojs/videojs-contrib-ads/pull/312
-
-TODO: Update that link once that PR is merged.
+https://github.com/videojs/videojs-contrib-ads/blob/master/examples/module-import/entry.js
 
 With this basic structure in place, you're ready to develop an ad integration.
 
@@ -100,17 +106,23 @@ This is the basic flow for a simple use case, but there are other things the int
 * `skipLinearAdMode` (METHOD) -- At a time when `startLinearAdMode` is expected, calling `skipLinearAdMode` will immediately resume content playback instead.
 * `nopreroll` (EVENT) -- You can trigger this event even before `readyforpreroll` to indicate that no preroll will play. The ad plugin will not check for prerolls and will instead begin content playback after the `play` event (or immediately, if playback was already requested).
 * `nopostroll` (EVENT) -- Similar to `nopreroll`, you can trigger this event even before `contentended` to indicate that no postroll will play.  The ad plugin will not wait for a postroll to play and will instead immediately trigger the `ended` event.
-* `adserror` (EVENT) -- This event skips prerolls when seen before a preroll ad break. It skips postrolls if called after contentended and before a postroll ad break. It ends linear ad mode if seen during an ad break.
 * `contentresumed` (EVENT) - If your integration does not result in a "playing" event when resuming content after an ad, send this event to signal that content can resume. This was added to support stitched ads and is not normally necessary.
 
 There are some other useful events that videojs-contrib-ads may trigger:
 
  * `contentchanged` (EVENT) -- Fires when a new content video has been loaded in the player (specifically, at the same time as the `loadstart` media event for the new source). This means the ad workflow has restarted from the beginning. Your integration will need to trigger `adsready` again, for example. Note that when changing sources, the playback state of the player is retained: if the previous source was playing, the new source will also be playing and the ad workflow will not wait for a new `play` event.
 
-Deprecated events:
+### Deprecated events
 
-* `contentupdate` (EVENT) -- Replaced by `contentchanged`, which is more reliable.
-* `adscanceled` (EVENT) -- Intended to cancel all ads, it was never fully implemented. Instead, use `nopreroll` and `nopostroll`.
+The following events are slated for removal from contrib-ads and will have no special behavior once removed. These events should no longer be used in integrating ad plugins. Replacements are provided for matching functionality that will continue to be supported.
+
+* `contentupdate` (EVENT) -- In the future, contrib-ads will no longer trigger this event. Listen to the new `contentchanged` event instead; it is is more reliable.
+* `adscanceled` (EVENT) -- In the future, this event will no longer result in special behavior in contrib-ads. It was intended to cancel all ads, but it was never fully implemented. Instead, trigger `nopreroll` and `nopostroll`.
+* `adserror` (EVENT) -- In the future, this event will no longer result in special behavior in contrib-ads. Today, this event skips prerolls when seen before a preroll ad break. It skips postrolls if seen after contentended and before a postroll ad break. It ends linear ad mode if seen during an ad break. These behaviors should be replaced using `skipLinearAdMode` and `endLinearAdMode` in the ad integration.
+
+## Autoplay
+
+Using the `autoplay` attribute on the video element is not supported. Due to Autoplay Restrictions introduced by browsers, such as [Safari](https://webkit.org/blog/7734/auto-play-policy-changes-for-macos/) and [Chrome](https://developers.google.com/web/updates/2017/09/autoplay-policy-changes), using the `autoplay` attribute on the player will often not behave as expected. The recommended [best practice](https://developers.google.com/web/updates/2017/09/autoplay-policy-changes#best-practices) is to use the `player.play()` method to autoplay when autoplay without user interaction is not restricted and have access to the [play promise](https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/play) if it is available on that browser.
 
 ### Public Methods
 
@@ -534,10 +546,10 @@ A short list of features, fixes and changes for each release is available in [CH
 
 ## Roadmap
 
-### Unplanned Major Version Update
+### Version 7
 
 * Pause content video if there is a programmatic call to play (prefixed as adplay) while an ad is playing in an ad container (rather than content video element). Prefixing doesn't prevent the videojs behavior, so this would prevent the content from playing behind the ad. Right now, ad integrations I am aware of are doing this on their own, so this would require a migration to move the behavior into this project.
-* `contentended` has a confusing name: real `ended` events are later sent, and that is when content should be considered ended. The `content` prefix is used for events when content is resuming after an ad. A better name would be `readyforpostroll`. That would make it clearer to implementations that the correct response would be to either play a postroll or send the `nopostroll` event.
+* `contentended` has a confusing name: real `ended` events are later sent, and that is when content should be considered ended. The `content` prefix is used for events when content is resuming after an ad. A better name would be `readyforpostroll`. That would make it clearer to implementations that the correct response would be to either play a postroll or send the `nopostroll` event. `resumeended`, which is a workaround for this issue, could then become `contentended`, which would mirror all the other redispatched events.
 
 ## License
 

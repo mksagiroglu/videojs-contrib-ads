@@ -10,7 +10,7 @@ TODO:
 
 import QUnit from 'qunit';
 import videojs from 'video.js';
-import '../examples/basic-ad-plugin/example-integration.js';
+import '../../examples/basic-ad-plugin/example-integration.js';
 
 QUnit.module('Events and Postrolls', {
   beforeEach: function() {
@@ -28,7 +28,7 @@ QUnit.module('Events and Postrolls', {
     });
 
     this.player.exampleAds({
-      'adServerUrl': '/base/test/inventory.json',
+      'adServerUrl': '/base/test/integration/lib/inventory.json',
       'playPreroll': false,
       'playMidroll': false
     });
@@ -75,12 +75,8 @@ QUnit.test('ended event and postrolls: 0 before postroll, 1 after', function(ass
     }, 1000);
   });
 
-  // Seek to end once we're ready so postroll can play quickly
-  this.player.one('playing', () => {
-    this.player.currentTime(46);
-  });
-
   this.player.play();
+  this.player.currentTime(46);
 
 });
 

@@ -1,3 +1,15 @@
+<a name="6.0.1"></a>
+## [6.0.1](https://github.com/videojs/videojs-contrib-ads/compare/v5.0.4-0...v6.0.1) (2018-03-27)
+
+### Bug Fixes
+
+* Fix bug that could cause double ended events ([81699b4](https://github.com/videojs/videojs-contrib-ads/commit/81699b4))
+* Fix state logging when minified ([#339](https://github.com/videojs/videojs-contrib-ads/issues/339)) ([ae38894](https://github.com/videojs/videojs-contrib-ads/commit/ae38894))
+
+### Documentation
+
+* add autoplay attribute deprecation note to README ([#356](https://github.com/videojs/videojs-contrib-ads/issues/356)) ([bf82f40](https://github.com/videojs/videojs-contrib-ads/commit/bf82f40))
+
 <a name="6.0.0"></a>
 # [6.0.0](https://github.com/videojs/videojs-contrib-ads/compare/v5.0.4-0...v6.0.0) (2018-02-23)
 

@@ -1,6 +1,6 @@
 import QUnit from 'qunit';
 
-import {State} from '../../../src/states.js';
+import {State} from '../../../../src/states.js';
 
 /*
  * These tests are intended to be isolated unit tests for one state with all
@@ -26,6 +26,9 @@ QUnit.test('can transition to another state', function(assert) {
   let mockStateInit = false;
 
   class MockState {
+    static _getName() {
+      return 'MockState';
+    }
     init() {
       mockStateInit = true;
     }
@@ -47,7 +50,7 @@ QUnit.test('throws error if isAdState is not implemented', function(assert) {
   } catch(e) {
     error = e;
   }
-  assert.equal(error.message, 'isAdState unimplemented for State');
+  assert.equal(error.message, 'isAdState unimplemented for Anonymous State');
 });
 
 QUnit.test('is not resuming content by default', function(assert) {

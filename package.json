@@ -7,7 +7,7 @@
     "type": "git",
     "url": "https://github.com/videojs/videojs-contrib-ads.git"
   },
-  "version": "6.0.0",
+  "version": "6.0.1",
   "author": "Brightcove, Inc.",
   "engines": {
     "node": ">=4.8.0"
@@ -39,7 +39,6 @@
     "test": "karma start test/karma.conf.js",
     "preversion": "npm test",
     "version": "node scripts/version.js",
-    "postversion": "node scripts/postversion.js",
     "watch": "npm-run-all -p watch:*",
     "watch:css": "node-sass src/plugin.scss dist/videojs-contrib-ads.css --output-style=compressed --linefeed=lf --watch src/**/*.scss",
     "watch:js-modules": "rollup -c scripts/modules.rollup.config.js -w",
@@ -69,7 +68,7 @@
     "karma-detect-browsers": "^2.2.5",
     "karma-firefox-launcher": "^1.0.1",
     "karma-ie-launcher": "^1.0.0",
-    "karma-qunit": "^1.2.1",
+    "karma-qunit": "^2.0.1",
     "karma-safari-launcher": "^1.0.0",
     "lodash": "^4.17.4",
     "mkdirp": "^0.5.1",
@@ -77,7 +76,7 @@
     "node-sass": "^4.5.3",
     "node-static": "^0.7.9",
     "npm-run-all": "^4.0.2",
-    "qunitjs": "^2.1.1",
+    "qunit": "^2.6.0",
     "rimraf": "^2.6.1",
     "rollup": "0.50.1",
     "rollup-plugin-babel": "^2.7.1",

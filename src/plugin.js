@@ -5,6 +5,8 @@ that live in in separate files.
 
 import videojs from 'video.js';
 
+import {version as adsVersion} from '../package.json';
+
 import redispatch from './redispatch.js';
 import initializeContentupdate from './contentupdate.js';
 import adMacroReplacement from './macros.js';
@@ -83,6 +85,12 @@ const contribAdsPlugin = function(options) {
     if (!player.hasClass('vjs-has-started')) {
       player.addClass('vjs-has-started');
     }
+  });
+
+  // video.js removes the vjs-waiting class on timeupdate. We want
+  // to make sure this still happens during content restoration.
+  player.on('contenttimeupdate', function() {
+    player.removeClass('vjs-waiting');
   });
 
   // We now auto-play when an ad gets loaded if we're playing ads in the same video
@@ -165,7 +173,7 @@ const contribAdsPlugin = function(options) {
     // This is experimental currently. Do not rely on its presence or behavior!
     adType: null,
 
-    VERSION: '__VERSION__',
+    VERSION: adsVersion,
 
     reset() {
       player.ads.disableNextSnapshotRestore = false;
