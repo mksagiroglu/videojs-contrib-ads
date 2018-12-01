@@ -10,21 +10,25 @@ import multiEntry from 'rollup-plugin-multi-entry';
 import resolve from 'rollup-plugin-node-resolve';
 
 export default {
-  moduleName: 'videojsContribAdsTests',
-  entry: 'test/**/test.*.js',
-  dest: 'test/dist/bundle.js',
-  format: 'iife',
+  name: 'videojsContribAdsTests',
+  input: 'test/**/test.*.js',
+  output: {
+    file: 'test/dist/bundle.js',
+    format: 'iife'
+  },
   external: [
     'qunit',
     'qunitjs',
     'sinon',
-    'video.js'
+    'video.js',
+    'lodash'
   ],
   globals: {
     'qunit': 'QUnit',
     'qunitjs': 'QUnit',
     'sinon': 'sinon',
-    'video.js': 'videojs'
+    'video.js': 'videojs',
+    'lodash': '_'
   },
   legacy: true,
   plugins: [

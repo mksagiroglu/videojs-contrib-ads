@@ -1,3 +1,121 @@
+<a name="6.6.1"></a>
+## [6.6.1](https://github.com/videojs/videojs-contrib-ads/compare/v6.4.3...v6.6.1) (2018-08-31)
+
+### Features
+
+* More complete support for stitched ad scenarios. ([#415](https://github.com/videojs/videojs-contrib-ads/issues/415)) ([a533bbb](https://github.com/videojs/videojs-contrib-ads/commit/a533bbb))
+
+### Bug Fixes
+
+* Avoid multiple-registration warning messages by accepting only the first contrib-ads per context. ([#421](https://github.com/videojs/videojs-contrib-ads/issues/421)) ([c46ed1a](https://github.com/videojs/videojs-contrib-ads/commit/c46ed1a))
+* middleware log message ([#423](https://github.com/videojs/videojs-contrib-ads/issues/423)) ([852e6c5](https://github.com/videojs/videojs-contrib-ads/commit/852e6c5))
+* remove hack ([#424](https://github.com/videojs/videojs-contrib-ads/issues/424)) ([578ee12](https://github.com/videojs/videojs-contrib-ads/commit/578ee12))
+* set contentresuming before calling adBreak.end ([#418](https://github.com/videojs/videojs-contrib-ads/issues/418)) ([627e94b](https://github.com/videojs/videojs-contrib-ads/commit/627e94b))
+
+### Chores
+
+* all lint warnings gone ([#428](https://github.com/videojs/videojs-contrib-ads/issues/428)) ([4a4a0f6](https://github.com/videojs/videojs-contrib-ads/commit/4a4a0f6))
+* Remove unneeded onDispose handling ([#422](https://github.com/videojs/videojs-contrib-ads/issues/422)) ([b8e8dcc](https://github.com/videojs/videojs-contrib-ads/commit/b8e8dcc))
+
+<a name="6.6.0"></a>
+# [6.6.0](https://github.com/videojs/videojs-contrib-ads/compare/v6.4.3...v6.6.0) (2018-08-23)
+
+### Features
+
+* More complete support for stitched ad scenarios. ([#415](https://github.com/videojs/videojs-contrib-ads/issues/415)) ([a533bbb](https://github.com/videojs/videojs-contrib-ads/commit/a533bbb))
+
+### Bug Fixes
+
+* Avoid multiple-registration warning messages by accepting only the first contrib-ads per context. ([#421](https://github.com/videojs/videojs-contrib-ads/issues/421)) ([c46ed1a](https://github.com/videojs/videojs-contrib-ads/commit/c46ed1a))
+
+<a name="6.5.0"></a>
+# [6.5.0](https://github.com/videojs/videojs-contrib-ads/compare/v6.4.3...v6.5.0) (2018-08-13)
+
+* Added liveCuePoints option
+
+<a name="6.4.3"></a>
+## [6.4.3](https://github.com/videojs/videojs-contrib-ads/compare/v6.4.2...v6.4.3) (2018-08-03)
+
+* Restore all sources instead of single source on snapshot restore
+* Send pause event when autoplay blocked on Chrome to be consistent with Safari
+
+<a name="6.4.2"></a>
+## [6.4.2](https://github.com/videojs/videojs-contrib-ads/compare/v6.4.1...v6.4.2) (2018-07-31)
+
+### Chores
+
+* Allow vjs7 dependency ([#413](https://github.com/videojs/videojs-contrib-ads/issues/413)) ([e4fe32e](https://github.com/videojs/videojs-contrib-ads/commit/e4fe32e))
+* **package:** update conventional-changelog-cli to version 2.0.1 ([#414](https://github.com/videojs/videojs-contrib-ads/issues/414)) ([6d5ff0f](https://github.com/videojs/videojs-contrib-ads/commit/6d5ff0f)), closes [#393](https://github.com/videojs/videojs-contrib-ads/issues/393)
+* Cleanup snapshot after ads done
+* Handle dispose in certain cases. More to come.
+
+<a name="6.4.1"></a>
+## [6.4.1](https://github.com/videojs/videojs-contrib-ads/compare/v6.4.0...v6.4.1) (2018-06-07)
+
+### Bug Fixes
+
+* Safter play promise usage
+
+<a name="6.4.0"></a>
+# [6.4.0](https://github.com/videojs/videojs-contrib-ads/compare/v6.3.0...v6.4.0) (2018-06-06)
+
+### Features
+
+* Allow default values for macros ([#383](https://github.com/videojs/videojs-contrib-ads/issues/383)) ([09e7f59](https://github.com/videojs/videojs-contrib-ads/commit/09e7f59))
+
+### Bug Fixes
+
+* hide loading spinner after nopostroll ([#373](https://github.com/videojs/videojs-contrib-ads/issues/373)) ([79a72ff](https://github.com/videojs/videojs-contrib-ads/commit/79a72ff))
+
+### Chores
+
+* **package:** update rollup-plugin-json to version 3.0.0 ([#381](https://github.com/videojs/videojs-contrib-ads/issues/381)) ([c1f23c7](https://github.com/videojs/videojs-contrib-ads/commit/c1f23c7))
+
+<a name="6.3.0"></a>
+# [6.3.0](https://github.com/videojs/videojs-contrib-ads/compare/v6.2.1...v6.3.0) (2018-05-07)
+
+### Features
+
+* Add contentIsLive setting ([#374](https://github.com/videojs/videojs-contrib-ads/issues/374)) ([59d90ed](https://github.com/videojs/videojs-contrib-ads/commit/59d90ed))
+
+### Bug Fixes
+
+* Update link with initialization info ([#378](https://github.com/videojs/videojs-contrib-ads/issues/378)) ([3fda394](https://github.com/videojs/videojs-contrib-ads/commit/3fda394))
+
+<a name="6.2.1"></a>
+## [6.2.1](https://github.com/videojs/videojs-contrib-ads/compare/v6.2.0...v6.2.1) (2018-04-30)
+
+## Bug Fixes
+
+* Only trigger play event when our play middleware terminates
+
+### Documentation
+
+* New documentation site: http://videojs.github.io/videojs-contrib-ads/
+
+<a name="6.2.0"></a>
+# [6.2.0](https://github.com/videojs/videojs-contrib-ads/compare/v6.0.1...v6.2.0) (2018-04-25)
+
+### Features
+
+* Add `readyforpostroll` event. Replaces the current meaning of `contentended`. Use of `contentended` to trigger postrolls is now deprecated but will continue to work until a later update.
+
+### Chores
+
+* **package:** update karma to version 2.0.2 ([#366](https://github.com/videojs/videojs-contrib-ads/issues/366)) ([8a6b878](https://github.com/videojs/videojs-contrib-ads/commit/8a6b878))
+
+<a name="6.1.0"></a>
+# [6.1.0](https://github.com/videojs/videojs-contrib-ads/compare/v6.0.1...v6.1.0) (2018-04-19)
+
+### Features
+
+* add playMiddleware to avoid calling play on tech when possible ([#337](https://github.com/videojs/videojs-contrib-ads/issues/337)) ([1482511](https://github.com/videojs/videojs-contrib-ads/commit/1482511))
+
+### Bug Fixes
+
+* Address iOS playsinline flash of BPB + poster ([#360](https://github.com/videojs/videojs-contrib-ads/issues/360)) ([33de864](https://github.com/videojs/videojs-contrib-ads/commit/33de864))
+* make the ads VERSION inline properly ([#332](https://github.com/videojs/videojs-contrib-ads/issues/332)) ([0b67022](https://github.com/videojs/videojs-contrib-ads/commit/0b67022))
+
 <a name="6.0.1"></a>
 ## [6.0.1](https://github.com/videojs/videojs-contrib-ads/compare/v5.0.4-0...v6.0.1) (2018-03-27)
 
@@ -69,7 +187,7 @@ This version features a major refactor for greatly improved stability and mainta
 ### Bug Fixes
 
 * Fix mis-named dists and potentially breaking change in package.json 'main' field. ([#280](https://github.com/videojs/videojs-contrib-ads/issues/280)) ([7633161](https://github.com/videojs/videojs-contrib-ads/commit/7633161))
-* Remove old call to player.load() during snapshot restoration for players which share the video element with the ad integration. This is causing problems in Chrome/Edge with Video.js 6 due to the asynchronous nature of calling player.src(). ([#257](https://github.com/videojs/videojs-contrib-ads/issues/257)) ([afb3ccf](https://github.com/videojs/videojs-contrib-ads/commit/afb3ccf))
+* Remove old call to player.load() during snapshot restoration for players which share the video element with the ad plugin. This is causing problems in Chrome/Edge with Video.js 6 due to the asynchronous nature of calling player.src(). ([#257](https://github.com/videojs/videojs-contrib-ads/issues/257)) ([afb3ccf](https://github.com/videojs/videojs-contrib-ads/commit/afb3ccf))
 * Fix issue where captions were showing during ads on iOS
 
 ### Chores

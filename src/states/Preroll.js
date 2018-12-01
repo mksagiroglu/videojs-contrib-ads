@@ -1,7 +1,6 @@
 import videojs from 'video.js';
 
-import {AdState, ContentPlayback} from '../states.js';
-import cancelContentPlay from '../cancelContentPlay.js';
+import {AdState} from '../states.js';
 import adBreak from '../adBreak.js';
 
 /*
@@ -21,9 +20,17 @@ export default class Preroll extends AdState {
    * For state transitions to work correctly, initialization should
    * happen here, not in a constructor.
    */
-  init(player, adsReady) {
+  init(player, adsReady, shouldResumeToContent) {
+    this.waitingForAdBreak = true;
+
     // Loading spinner from now until ad start or end of ad break.
     player.addClass('vjs-ad-loading');
+
+    // If adserror, adscanceled, nopreroll or skipLinearAdMode already
+    // ocurred, resume to content immediately
+    if (shouldResumeToContent || player.ads.nopreroll_) {
+      return this.resumeAfterNoPreroll(player);
+    }
 
     // Determine preroll timeout based on plugin settings
     let timeout = player.ads.settings.timeout;
@@ -41,6 +48,7 @@ export default class Preroll extends AdState {
     // wait until onAdsReady.
     if (adsReady) {
       this.handleAdsReady();
+
     } else {
       this.adsReady = false;
     }
@@ -50,7 +58,7 @@ export default class Preroll extends AdState {
    * Adsready event after play event.
    */
   onAdsReady(player) {
-    if (!player.ads.inAdBreak() && !player.ads.isContentResuming()) {
+    if (!player.ads.inAdBreak()) {
       player.ads.debug('Received adsready event (Preroll)');
       this.handleAdsReady();
     } else {
@@ -59,15 +67,11 @@ export default class Preroll extends AdState {
   }
 
   /*
-   * Ad integration is ready. Let's get started on this preroll.
+   * Ad plugin is ready. Let's get started on this preroll.
    */
   handleAdsReady() {
     this.adsReady = true;
-    if (this.player.ads.nopreroll_) {
-      this.noPreroll();
-    } else {
-      this.readyForPreroll();
-    }
+    this.readyForPreroll();
   }
 
   /*
@@ -95,7 +99,7 @@ export default class Preroll extends AdState {
   noPreroll() {
     this.afterLoadStart(() => {
       this.player.ads.debug('Skipping prerolls due to nopreroll event (Preroll)');
-      this.transitionTo(ContentPlayback);
+      this.resumeAfterNoPreroll(this.player);
     });
   }
 
@@ -113,24 +117,13 @@ export default class Preroll extends AdState {
   }
 
   /*
-   * Don't allow the content to start playing while we're dealing with ads.
-   */
-  onPlay(player) {
-    player.ads.debug('Received play event (Preroll)');
-
-    if (!this.inAdBreak() && !this.isContentResuming()) {
-      cancelContentPlay(this.player);
-    }
-  }
-
-  /*
    * adscanceled cancels all ads for the source. Play content now.
    */
   onAdsCanceled(player) {
     player.ads.debug('adscanceled (Preroll)');
 
     this.afterLoadStart(() => {
-      this.transitionTo(ContentPlayback);
+      this.resumeAfterNoPreroll(player);
     });
   }
 
@@ -140,19 +133,20 @@ export default class Preroll extends AdState {
   onAdsError(player) {
     videojs.log('adserror (Preroll)');
     // In the future, we may not want to do this automatically.
-    // Integrations should be able to choose to continue the ad break
+    // Ad plugins should be able to choose to continue the ad break
     // if there was an error.
     if (this.inAdBreak()) {
       player.ads.endLinearAdMode();
-    }
 
-    this.afterLoadStart(() => {
-      this.transitionTo(ContentPlayback);
-    });
+    } else {
+      this.afterLoadStart(() => {
+        this.resumeAfterNoPreroll(player);
+      });
+    }
   }
 
   /*
-   * Integration invoked startLinearAdMode, the ad break starts now.
+   * Ad plugin invoked startLinearAdMode, the ad break starts now.
    */
   startLinearAdMode() {
     const player = this.player;
@@ -160,7 +154,11 @@ export default class Preroll extends AdState {
     if (this.adsReady && !player.ads.inAdBreak() && !this.isContentResuming()) {
       player.clearTimeout(this._timeout);
       player.ads.adType = 'preroll';
+      this.waitingForAdBreak = false;
       adBreak.start(player);
+
+      // We don't need to block play calls anymore
+      player.ads._shouldBlockPlay = false;
     } else {
       videojs.log.warn('Unexpected startLinearAdMode invocation (Preroll)');
     }
@@ -175,7 +173,7 @@ export default class Preroll extends AdState {
   }
 
   /*
-   * Integration invoked endLinearAdMode, the ad break ends now.
+   * Ad plugin invoked endLinearAdMode, the ad break ends now.
    */
   endLinearAdMode() {
     const player = this.player;
@@ -183,13 +181,13 @@ export default class Preroll extends AdState {
     if (this.inAdBreak()) {
       player.removeClass('vjs-ad-loading');
       player.addClass('vjs-ad-content-resuming');
-      adBreak.end(player);
       this.contentResuming = true;
+      adBreak.end(player);
     }
   }
 
   /*
-   * Ad skipped by integration. Play content instead.
+   * Ad skipped by ad plugin. Play content instead.
    */
   skipLinearAdMode() {
     const player = this.player;
@@ -200,7 +198,7 @@ export default class Preroll extends AdState {
       this.afterLoadStart(() => {
         player.trigger('adskip');
         player.ads.debug('skipLinearAdMode (Preroll)');
-        this.transitionTo(ContentPlayback);
+        this.resumeAfterNoPreroll(player);
       });
     }
   }
@@ -211,7 +209,7 @@ export default class Preroll extends AdState {
   onAdTimeout(player) {
     this.afterLoadStart(() => {
       player.ads.debug('adtimeout (Preroll)');
-      this.transitionTo(ContentPlayback);
+      this.resumeAfterNoPreroll(player);
     });
   }
 
@@ -223,6 +221,20 @@ export default class Preroll extends AdState {
       videojs.log.warn('Unexpected nopreroll event (Preroll)');
     } else {
       this.noPreroll();
+    }
+  }
+
+  resumeAfterNoPreroll(player) {
+    // Resume to content and unblock play as there is no preroll ad
+    this.contentResuming = true;
+    player.ads._shouldBlockPlay = false;
+
+    // Play the content if we had requested play or we paused on 'contentupdate'
+    // and we haven't played yet. This happens if there was no preroll or if it
+    // errored, timed out, etc. Otherwise snapshot restore would play.
+    if (player.paused() &&
+        (player.ads._playRequested || player.ads._pausedOnContentupdate)) {
+      player.play();
     }
   }
 

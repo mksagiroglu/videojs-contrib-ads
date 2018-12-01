@@ -1,5 +1,5 @@
 import QUnit from 'qunit';
-
+import sinon from 'sinon';
 import {Postroll} from '../../../src/states.js';
 import adBreak from '../../../src/adBreak.js';
 
@@ -8,7 +8,7 @@ import adBreak from '../../../src/adBreak.js';
  * other modules mocked.
  */
 QUnit.module('Postroll', {
-  beforeEach: function() {
+  beforeEach() {
     this.events = [];
 
     this.player = {
@@ -141,4 +141,11 @@ QUnit.test('can clean up', function(assert) {
   this.postroll.cleanup(this.player);
   assert.equal(this.player.ads._contentEnding, false, '_contentEnding');
   assert.ok(clearSpy.calledWith(this.postroll._postrollTimeout), 'cleared timeout');
+});
+
+QUnit.test('can tell if waiting for ad break', function(assert) {
+  this.postroll.init(this.player);
+  assert.equal(this.postroll.isWaitingForAdBreak(), true, 'waiting for ad break');
+  this.postroll.startLinearAdMode();
+  assert.equal(this.postroll.isWaitingForAdBreak(), false, 'not waiting for ad break');
 });

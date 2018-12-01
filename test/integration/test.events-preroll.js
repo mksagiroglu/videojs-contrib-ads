@@ -3,47 +3,47 @@ TODO:
 * adplay, contentplay
 * adplaying, contentplaying
 * adloadstart, contentloadstart
-* adended, contentended
+* adended
 * adloadeddata, contentloadeddata
 * adloadedmetadata, contentloadedmetadata
 */
 
-import QUnit from 'qunit';
 import videojs from 'video.js';
-import '../../examples/basic-ad-plugin/example-integration.js';
+import '../../examples/basic-ad-plugin/example-plugin.js';
+import QUnit from 'qunit';
+import document from 'global/document';
 
 QUnit.module('Events and Prerolls', {
-  beforeEach: function() {
+  beforeEach() {
     this.video = document.createElement('video');
 
-    this.fixture = document.createElement('div');
-    document.querySelector('body').appendChild(this.fixture);
+    this.fixture = document.querySelector('#qunit-fixture');
     this.fixture.appendChild(this.video);
 
     this.player = videojs(this.video);
+
+    this.player.exampleAds({
+      adServerUrl: '/base/test/integration/lib/inventory.json'
+    });
 
     this.player.src({
       src: 'http://vjs.zencdn.net/v/oceans.webm',
       type: 'video/webm'
     });
 
-    this.player.exampleAds({
-      'adServerUrl': '/base/test/integration/lib/inventory.json'
-    });
-
   },
 
-  afterEach: function() {
+  afterEach() {
     this.player.dispose();
   }
 });
 
 QUnit.test('playing event and prerolls: 0 before preroll, 1+ after', function(assert) {
-  var done = assert.async();
+  const done = assert.async();
 
-  var beforePreroll = true;
-  var playingBeforePreroll = 0;
-  var playingAfterPreroll = 0;
+  let beforePreroll = true;
+  let playingBeforePreroll = 0;
+  let playingAfterPreroll = 0;
 
   this.player.on('adend', () => {
     beforePreroll = false;
@@ -70,14 +70,14 @@ QUnit.test('playing event and prerolls: 0 before preroll, 1+ after', function(as
     }
   });
 
-  this.player.play();
+  this.player.ready(this.player.play);
 
 });
 
 QUnit.test('ended event and prerolls: not even once', function(assert) {
-  var done = assert.async();
+  const done = assert.async();
 
-  var ended = 0;
+  let ended = 0;
 
   this.player.on('ended', () => {
     ended++;
@@ -95,16 +95,16 @@ QUnit.test('ended event and prerolls: not even once', function(assert) {
     }
   });
 
-  this.player.play();
+  this.player.ready(this.player.play);
 
 });
 
 QUnit.test('loadstart event and prerolls: 1 before preroll, 0 after', function(assert) {
-  var done = assert.async();
+  const done = assert.async();
 
-  var beforePreroll = true;
-  var loadstartBeforePreroll = 0;
-  var loadstartAfterPreroll = 0;
+  let beforePreroll = true;
+  let loadstartBeforePreroll = 0;
+  let loadstartAfterPreroll = 0;
 
   this.player.on('adend', () => {
     beforePreroll = false;
@@ -131,16 +131,16 @@ QUnit.test('loadstart event and prerolls: 1 before preroll, 0 after', function(a
     }
   });
 
-  this.player.play();
+  this.player.ready(this.player.play);
 
 });
 
 QUnit.test('loadedmetadata event and prerolls: 1 before preroll, 0 after', function(assert) {
-  var done = assert.async();
+  const done = assert.async();
 
-  var beforePreroll = true;
-  var loadedmetadataBeforePreroll = 0;
-  var loadedmetadataAfterPreroll = 0;
+  let beforePreroll = true;
+  let loadedmetadataBeforePreroll = 0;
+  let loadedmetadataAfterPreroll = 0;
 
   this.player.on('adend', () => {
     beforePreroll = false;
@@ -167,16 +167,16 @@ QUnit.test('loadedmetadata event and prerolls: 1 before preroll, 0 after', funct
     }
   });
 
-  this.player.play();
+  this.player.ready(this.player.play);
 
 });
 
 QUnit.test('loadeddata event and prerolls: 1 before preroll, 0 after', function(assert) {
-  var done = assert.async();
+  const done = assert.async();
 
-  var beforePreroll = true;
-  var loadeddataBeforePreroll = 0;
-  var loadeddataAfterPreroll = 0;
+  let beforePreroll = true;
+  let loadeddataBeforePreroll = 0;
+  let loadeddataAfterPreroll = 0;
 
   this.player.on('adend', () => {
     beforePreroll = false;
@@ -203,16 +203,16 @@ QUnit.test('loadeddata event and prerolls: 1 before preroll, 0 after', function(
     }
   });
 
-  this.player.play();
+  this.player.ready(this.player.play);
 
 });
 
 QUnit.test('play event and prerolls: 1 before preroll, 0 after', function(assert) {
-  var done = assert.async();
+  const done = assert.async();
 
-  var beforePreroll = true;
-  var playBeforePreroll = 0;
-  var playAfterPreroll = 0;
+  let beforePreroll = true;
+  let playBeforePreroll = 0;
+  let playAfterPreroll = 0;
 
   this.player.on('adend', () => {
     beforePreroll = false;
@@ -233,30 +233,31 @@ QUnit.test('play event and prerolls: 1 before preroll, 0 after', function(assert
 
   this.player.on('timeupdate', () => {
     if (this.player.currentTime() > 1) {
-      assert.equal(playBeforePreroll, 1, 'play before preroll'); // 2
+      // 2
+      assert.equal(playBeforePreroll, 1, 'play before preroll');
       assert.equal(playAfterPreroll, 0, 'play after preroll');
       done();
     }
   });
 
-  this.player.play();
+  this.player.ready(this.player.play);
 
 });
 
 QUnit.test('Event prefixing and prerolls', function(assert) {
-  var done = assert.async();
+  const done = assert.async();
 
-  var beforePreroll = true;
-  var seenInAdMode = [];
-  var seenInContentResuming = [];
-  var seenOutsideAdModeBefore = [];
-  var seenOutsideAdModeAfter = [];
+  let beforePreroll = true;
+  const seenInAdMode = [];
+  const seenInContentResuming = [];
+  const seenOutsideAdModeBefore = [];
+  const seenOutsideAdModeAfter = [];
 
   this.player.on('adend', () => {
     beforePreroll = false;
   });
 
-  var events = [
+  let events = [
     'suspend',
     'abort',
     'error',
@@ -285,19 +286,18 @@ QUnit.test('Event prefixing and prerolls', function(assert) {
   }));
 
   this.player.on(events, (e) => {
-    var str = e.type;
+    const str = e.type;
+
     if (this.player.ads.isInAdMode()) {
       if (this.player.ads.isContentResuming()) {
         seenInContentResuming.push(str);
       } else {
         seenInAdMode.push(str);
       }
+    } else if (beforePreroll) {
+      seenOutsideAdModeBefore.push(str);
     } else {
-      if (beforePreroll) {
-        seenOutsideAdModeBefore.push(str);
-      } else {
-        seenOutsideAdModeAfter.push(str);
-      }
+      seenOutsideAdModeAfter.push(str);
     }
   });
 
@@ -307,7 +307,7 @@ QUnit.test('Event prefixing and prerolls', function(assert) {
   });
 
   this.player.on('timeupdate', () => {
-    if (this.player.currentTime() > 1) {
+    if (this.player.currentTime() > 0) {
 
       seenOutsideAdModeBefore.forEach((event) => {
         assert.ok(!/^ad/.test(event), event + ' has no ad prefix before preroll');
@@ -331,6 +331,6 @@ QUnit.test('Event prefixing and prerolls', function(assert) {
     }
   });
 
-  this.player.play();
+  this.player.ready(this.player.play);
 
 });

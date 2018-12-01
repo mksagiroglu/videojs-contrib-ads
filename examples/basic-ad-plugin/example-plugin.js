@@ -1,5 +1,5 @@
 /*
- * Example ad integration using the videojs-ads plugin.
+ * Example ad plugin using the videojs-ads plugin.
  *
  * For each content video, this plugin plays one preroll and one midroll.
  * Ad content is chosen randomly from the URLs listed in inventory.json.
@@ -10,7 +10,7 @@
   var registerPlugin = vjs.registerPlugin || vjs.plugin;
 
   /*
-   * Register the ad integration plugin.
+   * Register the ad plugin.
    * To initialize for a player, call player.exampleAds().
    *
    * @param {mixed} options Hash of obtions for the exampleAds plugin.
@@ -30,7 +30,7 @@
       //  - postrollPlayed - whether we've played a postroll
       state = {},
 
-      // just like any other video.js plugin, ad integrations can
+      // just like any other video.js plugin, ad plugins can
       // accept initialization options
       adServerUrl = (options && options.adServerUrl) || "inventory.json",
       midrollPoint = (options && options.midrollPoint) || 15,
@@ -79,9 +79,11 @@
         // tell videojs to load the ad
         var media = state.inventory[Math.floor(Math.random() * state.inventory.length)];
         player.src(media);
+        player.trigger('ads-ad-started');
 
         // when it's finished
         player.one('adended', function() {
+          player.trigger('ads-ad-ended');
           // play your linear ad content, then when it's finished ...
           player.ads.endLinearAdMode();
           state.adPlaying = false;
@@ -95,12 +97,18 @@
     // request ads right away
     requestAds();
 
+    player.on('adsready', function() {
+      if (!playPreroll) {
+        player.trigger('nopreroll');
+      }
+    });
+
     // request ad inventory whenever the player gets content to play
-    player.on('contentchanged', () => {
+    player.on('contentchanged', function() {
       requestAds();
     });
 
-    player.on('contentended', function() {
+    player.on('readyforpostroll', function() {
       if (!state.postrollPlayed && playPostroll) {
         state.postrollPlayed = true;
         playAd();

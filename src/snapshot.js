@@ -5,6 +5,8 @@ restoring the player state after an ad.
 
 import videojs from 'video.js';
 
+let tryToResumeTimeout_;
+
 /*
  * Returns an object that captures the portions of player state relevant to
  * video playback. The result of this function can be passed to
@@ -32,13 +34,13 @@ export function getPlayerSnapshot(player) {
   const snapshotObject = {
     ended: player.ended(),
     currentSrc: player.currentSrc(),
+    sources: player.currentSources(),
     src: player.tech_.src(),
     currentTime,
     type: player.currentType()
   };
 
   if (tech) {
-    snapshotObject.nativePoster = tech.poster;
     snapshotObject.style = tech.getAttribute('style');
   }
 
@@ -62,13 +64,16 @@ export function getPlayerSnapshot(player) {
  * @param {Object} player - the videojs player object
  * @param {Object} snapshotObject - the player state to apply
  */
-export function restorePlayerSnapshot(player, snapshotObject, callback) {
+export function restorePlayerSnapshot(player, callback) {
+  const snapshotObject = player.ads.snapshot;
+
   if (callback === undefined) {
     callback = () => {};
   }
 
   if (player.ads.disableNextSnapshotRestore === true) {
     player.ads.disableNextSnapshotRestore = false;
+    delete player.ads.snapshot;
     callback();
     return;
   }
@@ -105,6 +110,19 @@ export function restorePlayerSnapshot(player, snapshotObject, callback) {
           currentTime = player.currentTime();
         }
         player.currentTime(currentTime);
+
+      }
+
+      // iOS live play after restore if player was paused (would not be paused if
+      // ad played muted behind ad)
+      if (player.paused()) {
+        const playPromise = player.play();
+
+        if (playPromise && playPromise.catch) {
+          playPromise.catch((error) => {
+            videojs.log.warn('Play promise rejected in IOS snapshot resume', error);
+          });
+        }
       }
 
     // Restore the video position after an ad.
@@ -118,7 +136,13 @@ export function restorePlayerSnapshot(player, snapshotObject, callback) {
     } else {
       // Prerolls and midrolls, just seek to the player time before the ad.
       player.currentTime(snapshotObject.currentTime);
-      player.play();
+      const playPromise = player.play();
+
+      if (playPromise && playPromise.catch) {
+        playPromise.catch((error) => {
+          videojs.log.warn('Play promise rejected in snapshot resume', error);
+        });
+      }
     }
 
     // if we added autoplay to force content loading on iOS, remove it now
@@ -140,9 +164,8 @@ export function restorePlayerSnapshot(player, snapshotObject, callback) {
     // way it could've been called by removing the listener and clearing out
     // the timeout.
     player.off('contentcanplay', tryToResume);
-    if (player.ads.tryToResumeTimeout_) {
-      player.clearTimeout(player.ads.tryToResumeTimeout_);
-      player.ads.tryToResumeTimeout_ = null;
+    if (tryToResumeTimeout_) {
+      player.clearTimeout(tryToResumeTimeout_);
     }
 
     // Tech may have changed depending on the differences in sources of the
@@ -178,10 +201,6 @@ export function restorePlayerSnapshot(player, snapshotObject, callback) {
     }
   };
 
-  if (snapshotObject.nativePoster) {
-    tech.poster = snapshotObject.nativePoster;
-  }
-
   if ('style' in snapshotObject) {
     // overwrite all css style properties to restore state precisely
     tech.setAttribute('style', snapshotObject.style || '');
@@ -194,7 +213,10 @@ export function restorePlayerSnapshot(player, snapshotObject, callback) {
 
   if (player.ads.videoElementRecycled()) {
     // Snapshot restore is done, so now we're really finished.
-    player.one('resumeended', callback);
+    player.one('resumeended', () => {
+      delete player.ads.snapshot;
+      callback();
+    });
 
     // on ios7, fiddling with textTracks too early will cause safari to crash
     player.one('contentloadedmetadata', restoreTracks);
@@ -210,13 +232,13 @@ export function restorePlayerSnapshot(player, snapshotObject, callback) {
     }
 
     // if the src changed for ad playback, reset it
-    player.src({ src: snapshotObject.currentSrc, type: snapshotObject.type });
+    player.src(snapshotObject.sources);
 
     // and then resume from the snapshots time once the original src has loaded
     // in some browsers (firefox) `canplay` may not fire correctly.
     // Reace the `canplay` event with a timeout.
     player.one('contentcanplay', tryToResume);
-    player.ads.tryToResumeTimeout_ = player.setTimeout(tryToResume, 2000);
+    tryToResumeTimeout_ = player.setTimeout(tryToResume, 2000);
   } else {
     // if we didn't change the src, just restore the tracks
     restoreTracks();
@@ -226,10 +248,17 @@ export function restorePlayerSnapshot(player, snapshotObject, callback) {
     if (!player.ended()) {
       // the src didn't change and this wasn't a postroll
       // just resume playback at the current time.
-      player.play();
+      const playPromise = player.play();
+
+      if (playPromise && playPromise.catch) {
+        playPromise.catch((error) => {
+          videojs.log.warn('Play promise rejected in snapshot restore', error);
+        });
+      }
     }
 
     // snapshot restore is complete
+    delete player.ads.snapshot;
     callback();
   }
 }

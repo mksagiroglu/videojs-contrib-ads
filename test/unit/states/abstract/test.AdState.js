@@ -1,5 +1,4 @@
 import QUnit from 'qunit';
-
 import {AdState} from '../../../../src/states.js';
 
 /*
@@ -7,7 +6,7 @@ import {AdState} from '../../../../src/states.js';
  * other modules mocked.
  */
 QUnit.module('AdState', {
-  beforeEach: function() {
+  beforeEach() {
     this.player = {
       ads: {}
     };

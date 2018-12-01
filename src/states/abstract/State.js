@@ -17,13 +17,14 @@ export default class State {
    */
   transitionTo(NewState, ...args) {
     const player = this.player;
-    const previousState = this;
 
-    previousState.cleanup(player);
+    // Since State is an abstract class, this will refer to
+    // the state that is extending this class
+    this.cleanup(player);
     const newState = new NewState(player);
 
     player.ads._state = newState;
-    player.ads.debug(previousState.constructor._getName() + ' -> ' +
+    player.ads.debug(this.constructor._getName() + ' -> ' +
       newState.constructor._getName());
     newState.init(player, ...args);
   }
@@ -46,6 +47,7 @@ export default class State {
   onPlay() {}
   onPlaying() {}
   onEnded() {}
+  onAdEnded() {}
   onAdsReady() {
     videojs.log.warn('Unexpected adsready event');
   }
@@ -55,8 +57,8 @@ export default class State {
   onAdStarted() {}
   onContentChanged() {}
   onContentResumed() {}
-  onContentEnded() {
-    videojs.log.warn('Unexpected contentended event');
+  onReadyForPostroll() {
+    videojs.log.warn('Unexpected readyforpostroll event');
   }
   onNoPreroll() {}
   onNoPostroll() {}
@@ -85,7 +87,15 @@ export default class State {
   }
 
   /*
-   * Overridden by PrerollState, MidrollState, and PostrollState.
+   * Overridden by Preroll and Postroll. Midrolls jump right into the ad break
+   * so there is no "waiting" state for them.
+   */
+  isWaitingForAdBreak() {
+    return false;
+  }
+
+  /*
+   * Overridden by Preroll, Midroll, and Postroll.
    */
   isContentResuming() {
     return false;
@@ -117,8 +127,8 @@ export default class State {
       this.onContentChanged(player);
     } else if (type === 'contentresumed') {
       this.onContentResumed(player);
-    } else if (type === 'contentended') {
-      this.onContentEnded(player);
+    } else if (type === 'readyforpostroll') {
+      this.onReadyForPostroll(player);
     } else if (type === 'playing') {
       this.onPlaying(player);
     } else if (type === 'ended') {
@@ -127,6 +137,8 @@ export default class State {
       this.onNoPreroll(player);
     } else if (type === 'nopostroll') {
       this.onNoPostroll(player);
+    } else if (type === 'adended') {
+      this.onAdEnded(player);
     }
   }
 

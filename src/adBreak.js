@@ -1,7 +1,7 @@
 /*
  * Encapsulates logic for starting and ending ad breaks. An ad break
  * is the time between startLinearAdMode and endLinearAdMode. The ad
- * integration may play 0 or more ads during this time.
+ * plugin may play 0 or more ads during this time.
  */
 
 import * as snapshot from './snapshot.js';
@@ -15,7 +15,7 @@ function start(player) {
   player.trigger('adstart');
 
   // Capture current player state snapshot
-  if (!player.ads.shouldPlayContentBehindAd(player)) {
+  if (player.ads.shouldTakeSnapshots()) {
     player.ads.snapshot = snapshot.getPlayerSnapshot(player);
   }
 
@@ -36,8 +36,7 @@ function start(player) {
   }
 
   // This removes the native poster so the ads don't show the content
-  // poster if content element is reused for ad playback. The snapshot
-  // will restore it afterwards.
+  // poster if content element is reused for ad playback.
   player.ads.removeNativePoster();
 }
 
@@ -65,8 +64,8 @@ function end(player, callback) {
   }
 
   // Restore snapshot
-  if (!player.ads.shouldPlayContentBehindAd(player)) {
-    snapshot.restorePlayerSnapshot(player, player.ads.snapshot, callback);
+  if (player.ads.shouldTakeSnapshots()) {
+    snapshot.restorePlayerSnapshot(player, callback);
 
   // Reset the volume to pre-ad levels
   } else {

@@ -10,6 +10,7 @@ export default class AdState extends State {
   constructor(player) {
     super(player);
     this.contentResuming = false;
+    this.waitingForAdBreak = false;
   }
 
   /*
@@ -30,7 +31,7 @@ export default class AdState extends State {
   }
 
   /*
-   * If the integration does not result in a playing event when resuming content after an
+   * If the ad plugin does not result in a playing event when resuming content after an
    * ad, they should instead trigger a contentresumed event to signal that content should
    * resume. The main use case for this is when ads are stitched into the content video.
    */
@@ -38,6 +39,14 @@ export default class AdState extends State {
     if (this.contentResuming) {
       this.transitionTo(ContentPlayback);
     }
+  }
+
+  /*
+   * Check if we are in an ad state waiting for the ad plugin to start
+   * an ad break.
+   */
+  isWaitingForAdBreak() {
+    return this.waitingForAdBreak;
   }
 
   /*

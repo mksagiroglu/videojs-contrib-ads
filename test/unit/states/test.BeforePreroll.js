@@ -1,4 +1,6 @@
 import QUnit from 'qunit';
+import sinon from 'sinon';
+
 import {BeforePreroll} from '../../../src/states.js';
 import * as CancelContentPlay from '../../../src/cancelContentPlay.js';
 
@@ -7,12 +9,13 @@ import * as CancelContentPlay from '../../../src/cancelContentPlay.js';
  * other modules mocked.
  */
 QUnit.module('BeforePreroll', {
-  beforeEach: function() {
+  beforeEach() {
     this.events = [];
 
     this.player = {
       ads: {
-        debug: () => {}
+        debug: () => {},
+        _shouldBlockPlay: false
       },
       setTimeout: () => {},
       trigger: (event) => {
@@ -21,21 +24,22 @@ QUnit.module('BeforePreroll', {
     };
 
     this.beforePreroll = new BeforePreroll(this.player);
-    this.beforePreroll.transitionTo = (newState, arg) => {
+    this.beforePreroll.transitionTo = (newState, arg, arg2) => {
       this.newState = newState.name;
       this.transitionArg = arg;
+      this.transitionArg2 = arg2;
     };
 
     this.cancelContentPlayStub = sinon.stub(CancelContentPlay, 'cancelContentPlay');
   },
 
-  afterEach: function() {
+  afterEach() {
     this.cancelContentPlayStub.restore();
   }
 });
 
 QUnit.test('transitions to Preroll (adsready first)', function(assert) {
-  this.beforePreroll.init();
+  this.beforePreroll.init(this.player);
   assert.equal(this.beforePreroll.adsReady, false);
   this.beforePreroll.onAdsReady(this.player);
   assert.equal(this.beforePreroll.adsReady, true);
@@ -45,7 +49,7 @@ QUnit.test('transitions to Preroll (adsready first)', function(assert) {
 });
 
 QUnit.test('transitions to Preroll (play first)', function(assert) {
-  this.beforePreroll.init();
+  this.beforePreroll.init(this.player);
   assert.equal(this.beforePreroll.adsReady, false);
   this.beforePreroll.onPlay(this.player);
   assert.equal(this.newState, 'Preroll');
@@ -53,32 +57,77 @@ QUnit.test('transitions to Preroll (play first)', function(assert) {
 });
 
 QUnit.test('cancels ads', function(assert) {
-  this.beforePreroll.init();
+  this.beforePreroll.init(this.player);
   this.beforePreroll.onAdsCanceled(this.player);
-  assert.equal(this.newState, 'ContentPlayback');
+  assert.equal(this.beforePreroll.shouldResumeToContent, true);
+  this.beforePreroll.onPlay(this.player);
+  assert.equal(this.newState, 'Preroll');
+  assert.equal(this.transitionArg, false);
+  assert.equal(this.transitionArg2, true);
 });
 
-QUnit.test('transitions to content playback on error', function(assert) {
-  this.beforePreroll.init();
+QUnit.test('transitions to content resuming in preroll on error', function(assert) {
+  this.beforePreroll.init(this.player);
   this.beforePreroll.onAdsError(this.player);
-  assert.equal(this.newState, 'ContentPlayback');
+  assert.equal(this.beforePreroll.shouldResumeToContent, true);
+  this.beforePreroll.onPlay(this.player);
+  assert.equal(this.newState, 'Preroll');
+  assert.equal(this.transitionArg, false);
+  assert.equal(this.transitionArg2, true);
 });
 
 QUnit.test('has no preroll', function(assert) {
-  this.beforePreroll.init();
+  this.beforePreroll.init(this.player);
   this.beforePreroll.onNoPreroll(this.player);
-  assert.equal(this.newState, 'ContentPlayback');
+  assert.equal(this.beforePreroll.shouldResumeToContent, true);
+  this.beforePreroll.onPlay(this.player);
+  assert.equal(this.newState, 'Preroll');
+  assert.equal(this.transitionArg, false);
+  assert.equal(this.transitionArg2, true);
 });
 
 QUnit.test('skips the preroll', function(assert) {
-  this.beforePreroll.init();
+  this.beforePreroll.init(this.player);
   this.beforePreroll.skipLinearAdMode();
   assert.equal(this.events[0], 'adskip');
-  assert.equal(this.newState, 'ContentPlayback');
+  assert.equal(this.beforePreroll.shouldResumeToContent, true);
+  this.beforePreroll.onPlay(this.player);
+  assert.equal(this.newState, 'Preroll');
+  assert.equal(this.transitionArg, false);
+  assert.equal(this.transitionArg2, true);
 });
 
-QUnit.test('does nothing on content change', function(assert) {
-  this.beforePreroll.init();
+QUnit.test('handles content change', function(assert) {
+  sinon.spy(this.beforePreroll, 'init');
   this.beforePreroll.onContentChanged(this.player);
-  assert.equal(this.newState, undefined);
+  assert.equal(this.beforePreroll.init.calledOnce, true);
+});
+
+QUnit.test('sets _shouldBlockPlay to true', function(assert) {
+  this.beforePreroll.init(this.player);
+  assert.equal(this.player.ads._shouldBlockPlay, true);
+});
+
+QUnit.test('updates `shouldResumeToContent` on `nopreroll`', function(assert) {
+  this.beforePreroll.init(this.player);
+  this.beforePreroll.onNoPreroll();
+  assert.strictEqual(this.beforePreroll.shouldResumeToContent, true);
+});
+
+QUnit.test('updates `shouldResumeToContent` on `adserror`', function(assert) {
+  this.beforePreroll.init(this.player);
+  this.beforePreroll.onAdsError();
+  assert.strictEqual(this.beforePreroll.shouldResumeToContent, true);
+});
+
+QUnit.test('updates `shouldResumeToContent` on `adscanceled`', function(assert) {
+  this.beforePreroll.init(this.player);
+  this.beforePreroll.onAdsCanceled(this.player);
+  assert.strictEqual(this.beforePreroll.shouldResumeToContent, true);
+});
+
+QUnit.test('updates `shouldResumeToContent` on `skipLinearAdMode`', function(assert) {
+  this.beforePreroll.init(this.player);
+  this.beforePreroll.skipLinearAdMode();
+  assert.strictEqual(this.beforePreroll.shouldResumeToContent, true);
 });

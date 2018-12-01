@@ -19,19 +19,14 @@ export default class ContentPlayback extends ContentState {
    * happen here, not in a constructor.
    */
   init(player) {
-    // Play the content if cancelContentPlay happened or we paused on 'contentupdate'
-    // and we haven't played yet. This happens if there was no preroll or if it
-    // errored, timed out, etc. Otherwise snapshot restore would play.
-    if (player.paused() &&
-        (player.ads._cancelledPlay || player.ads._pausedOnContentupdate)) {
-      player.play();
-    }
+    // Don't block calls to play in content playback
+    player.ads._shouldBlockPlay = false;
   }
 
   /*
    * In the case of a timeout, adsready might come in late. This assumes the behavior
    * that if an ad times out, it could still interrupt the content and start playing.
-   * An integration could behave otherwise by ignoring this event.
+   * An ad plugin could behave otherwise by ignoring this event.
    */
   onAdsReady(player) {
     player.ads.debug('Received adsready event (ContentPlayback)');
@@ -45,8 +40,8 @@ export default class ContentPlayback extends ContentState {
   /*
    * Content ended before postroll checks.
    */
-  onContentEnded(player) {
-    player.ads.debug('Received contentended event');
+  onReadyForPostroll(player) {
+    player.ads.debug('Received readyforpostroll event');
     this.transitionTo(Postroll);
   }
 
